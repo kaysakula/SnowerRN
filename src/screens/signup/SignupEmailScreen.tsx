@@ -3,7 +3,7 @@
 //  Project: SnowerRN
 //
 //  Created by KAY.SAKULA on 2025-10-14.
-//  Updated by KAY.SAKULA on 2025-10-17.
+//  Updated by KAY.SAKULA on 2025-10-18.
 //
 //  Description:
 //  メール新規登録画面
@@ -11,6 +11,17 @@
 //
 
 import React, { useState, useCallback } from 'react';
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  ActivityIndicator,
+  Alert,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import Icon from 'react-native-vector-icons/Feather';
 import { useAuth } from '../../contexts/AuthContext';
 
 interface SignupEmailScreenProps {
@@ -20,7 +31,7 @@ interface SignupEmailScreenProps {
 
 export const SignupEmailScreen: React.FC<SignupEmailScreenProps> = ({
   onBack,
-  onNext,
+  _onNext, // 未使用だが将来使う可能性があるため _ プレフィックス
 }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -29,89 +40,210 @@ export const SignupEmailScreen: React.FC<SignupEmailScreenProps> = ({
 
   const handleSignup = useCallback(async () => {
     if (password !== confirmPassword) {
-      alert('パスワードが一致しません');
+      Alert.alert('エラー', 'パスワードが一致しません');
       return;
     }
-    await signup(email, password);
+
+    try {
+      await signup(email, password);
+    } catch {
+      // エラーはuseAuthのerrorMessageで表示される
+    }
   }, [email, password, confirmPassword, signup]);
 
   const isFormValid =
     email && password && confirmPassword && password === confirmPassword;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-cyan-50 flex items-center justify-center p-8">
-      <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8">
-        <button
-          onClick={onBack}
-          className="mb-6 text-blue-600 hover:text-blue-700 font-medium"
-        >
-          ← 戻る
-        </button>
+    <SafeAreaView style={styles.container}>
+      <View style={styles.content}>
+        {/* 戻るボタン */}
+        <TouchableOpacity style={styles.backButton} onPress={onBack}>
+          <Icon name="arrow-left" size={24} color="#3B82F6" />
+          <Text style={styles.backText}>戻る</Text>
+        </TouchableOpacity>
 
-        <h2 className="text-3xl font-bold text-gray-800 mb-2">
-          アカウント作成
-        </h2>
-        <p className="text-gray-600 mb-8">メールアドレスで新規登録</p>
+        {/* タイトル */}
+        <Text style={styles.title}>アカウント作成</Text>
+        <Text style={styles.subtitle}>メールアドレスで新規登録</Text>
 
-        <div className="space-y-6">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              メールアドレス
-            </label>
-            <input
-              type="email"
-              value={email}
-              onChange={e => setEmail(e.target.value)}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="email@example.com"
-            />
-          </div>
+        {/* フォーム */}
+        <View style={styles.form}>
+          {/* メールアドレス */}
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>メールアドレス</Text>
+            <View style={styles.inputContainer}>
+              <Icon
+                name="mail"
+                size={20}
+                color="#9CA3AF"
+                style={styles.inputIcon}
+              />
+              <TextInput
+                style={styles.input}
+                value={email}
+                onChangeText={setEmail}
+                placeholder="email@example.com"
+                keyboardType="email-address"
+                autoCapitalize="none"
+                editable={!isLoading}
+              />
+            </View>
+          </View>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              パスワード
-            </label>
-            <input
-              type="password"
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="8文字以上"
-            />
-          </div>
+          {/* パスワード */}
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>パスワード</Text>
+            <View style={styles.inputContainer}>
+              <Icon
+                name="lock"
+                size={20}
+                color="#9CA3AF"
+                style={styles.inputIcon}
+              />
+              <TextInput
+                style={styles.input}
+                value={password}
+                onChangeText={setPassword}
+                placeholder="8文字以上"
+                secureTextEntry
+                editable={!isLoading}
+              />
+            </View>
+          </View>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              パスワード確認
-            </label>
-            <input
-              type="password"
-              value={confirmPassword}
-              onChange={e => setConfirmPassword(e.target.value)}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="もう一度入力"
-            />
-          </div>
+          {/* パスワード確認 */}
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>パスワード確認</Text>
+            <View style={styles.inputContainer}>
+              <Icon
+                name="lock"
+                size={20}
+                color="#9CA3AF"
+                style={styles.inputIcon}
+              />
+              <TextInput
+                style={styles.input}
+                value={confirmPassword}
+                onChangeText={setConfirmPassword}
+                placeholder="もう一度入力"
+                secureTextEntry
+                editable={!isLoading}
+              />
+            </View>
+          </View>
 
+          {/* エラーメッセージ */}
           {errorMessage && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
-              {errorMessage}
-            </div>
+            <View style={styles.errorContainer}>
+              <Text style={styles.errorText}>{errorMessage}</Text>
+            </View>
           )}
 
-          <button
-            onClick={handleSignup}
+          {/* 作成ボタン */}
+          <TouchableOpacity
+            style={[
+              styles.signupButton,
+              (!isFormValid || isLoading) && styles.signupButtonDisabled,
+            ]}
+            onPress={handleSignup}
             disabled={!isFormValid || isLoading}
-            className={`w-full py-3 rounded-lg font-semibold transition-colors ${
-              isFormValid && !isLoading
-                ? 'bg-blue-600 hover:bg-blue-700 text-white'
-                : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-            }`}
           >
-            {isLoading ? '作成中...' : 'アカウント作成'}
-          </button>
-        </div>
-      </div>
-    </div>
+            {isLoading ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <Text style={styles.signupButtonText}>アカウント作成</Text>
+            )}
+          </TouchableOpacity>
+        </View>
+      </View>
+    </SafeAreaView>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#F0F9FF',
+  },
+  content: {
+    flex: 1,
+    padding: 24,
+  },
+  backButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 24,
+  },
+  backText: {
+    color: '#3B82F6',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  title: {
+    fontSize: 32,
+    fontWeight: 'bold',
+    color: '#1F2937',
+    marginBottom: 8,
+  },
+  subtitle: {
+    fontSize: 16,
+    color: '#6B7280',
+    marginBottom: 32,
+  },
+  form: {
+    gap: 24,
+  },
+  inputGroup: {
+    gap: 8,
+  },
+  label: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#374151',
+  },
+  inputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    borderWidth: 1,
+    borderColor: '#D1D5DB',
+    borderRadius: 12,
+    paddingHorizontal: 12,
+  },
+  inputIcon: {
+    marginRight: 8,
+  },
+  input: {
+    flex: 1,
+    paddingVertical: 12,
+    fontSize: 16,
+    color: '#1F2937',
+  },
+  errorContainer: {
+    backgroundColor: '#FEF2F2',
+    borderWidth: 1,
+    borderColor: '#FECACA',
+    borderRadius: 12,
+    padding: 12,
+  },
+  errorText: {
+    color: '#DC2626',
+    fontSize: 14,
+  },
+  signupButton: {
+    backgroundColor: '#3B82F6',
+    paddingVertical: 16,
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  signupButtonDisabled: {
+    backgroundColor: '#9CA3AF',
+  },
+  signupButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+});
