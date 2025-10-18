@@ -3,7 +3,7 @@
 //  Project: SnowerRN
 //
 //  Created by KAY.SAKULA on 2025-10-14.
-//  Updated by KAY.SAKULA on 2025-10-15.
+//  Updated by KAY.SAKULA on 2025-10-18.
 //
 //  Description:
 //  サインアップ - 認証コード入力画面
@@ -25,7 +25,7 @@ import { useNavigation } from '@react-navigation/native';
 import type { StackNavigationProp } from '@react-navigation/stack';
 import type { AuthStackParamList } from '../../navigation/SignupNavigator';
 import { useSignupStore } from '../../stores/signupStore';
-import { signupService } from '../../services/signupService';
+import { signupService } from '../../services/signup/signupService';
 
 type NavigationProp = StackNavigationProp<AuthStackParamList>;
 
@@ -42,7 +42,10 @@ const SignupEmailCodeScreen = () => {
     const timer = setInterval(() => {
       setResendTimer(prev => (prev > 0 ? prev - 1 : 0));
     }, 1000);
+
     return () => clearInterval(timer);
+    // timerは毎回新しいintervalが作成されるため、依存配列は空でOK
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // コード入力処理
@@ -83,8 +86,8 @@ const SignupEmailCodeScreen = () => {
 
       // アカウント作成画面へ
       navigation.navigate('SignupAccount');
-    } catch (error) {
-      console.error('Verification error:', error);
+    } catch {
+      // エラー変数を使用しないため、catchブロックでは変数を省略
       Alert.alert('エラー', '認証コードが正しくありません');
       setCode(['', '', '', '', '', '']);
       inputRefs.current[0]?.focus();
@@ -130,7 +133,9 @@ const SignupEmailCodeScreen = () => {
         {code.map((digit, index) => (
           <TextInput
             key={index}
-            ref={ref => (inputRefs.current[index] = ref)}
+            ref={ref => {
+              inputRefs.current[index] = ref;
+            }}
             style={[styles.codeInput, digit ? styles.codeInputFilled : null]}
             value={digit}
             onChangeText={text => handleCodeChange(text.slice(-1), index)}

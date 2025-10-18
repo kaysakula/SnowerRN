@@ -3,7 +3,7 @@
 //  Project: SnowerRN
 //
 //  Created by KAY.SAKULA on 2025-10-16.
-//  Updated by KAY.SAKULA on 2025-10-16.
+//  Updated by KAY.SAKULA on 2025-10-18.
 //
 //  Description:
 //  認証状態管理
@@ -11,7 +11,7 @@
 //
 
 import React, { useState, useEffect, createContext, useContext } from 'react';
-import { loginService } from '../services/loginService';
+import loginService from '../services/login/loginService';
 
 interface AuthContextType {
   user: any;
@@ -35,17 +35,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
   useEffect(() => {
     // Firebase Auth状態監視: onAuthStateChanged
-    setTimeout(() => {
+    const unsubscribe = loginService.onAuthStateChanged(currentUser => {
+      setUser(currentUser);
       setIsLoading(false);
-    }, 2000);
+    });
+
+    return () => unsubscribe();
+    // loginServiceはシングルトンのため、依存配列は空でOK
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const login = async (email: string, password: string) => {
     try {
       setIsLoading(true);
       setErrorMessage(null);
-      const user = await loginService.login(email, password);
-      setUser(user);
+      const result = await loginService.loginWithEmail(email, password);
+      setUser(result.user);
     } catch (error: any) {
       setErrorMessage(error.message);
     } finally {
@@ -57,8 +62,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     try {
       setIsLoading(true);
       setErrorMessage(null);
-      const user = await loginService.signup(email, password);
-      setUser(user);
+      const result = await loginService.signupWithEmail(email, password);
+      setUser(result.user);
     } catch (error: any) {
       setErrorMessage(error.message);
     } finally {
@@ -70,8 +75,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     try {
       setIsLoading(true);
       setErrorMessage(null);
-      const user = await loginService.loginWithGoogle();
-      setUser(user);
+      const result = await loginService.loginWithGoogle();
+      setUser(result.user);
     } catch (error: any) {
       setErrorMessage(error.message);
     } finally {
@@ -83,8 +88,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     try {
       setIsLoading(true);
       setErrorMessage(null);
-      const user = await loginService.loginWithApple();
-      setUser(user);
+      const result = await loginService.loginWithApple();
+      setUser(result.user);
     } catch (error: any) {
       setErrorMessage(error.message);
     } finally {

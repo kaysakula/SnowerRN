@@ -11,33 +11,24 @@
 //
 
 import React, { useState, useCallback } from 'react';
-import {
-  Home,
-  Bell,
-  MessageCircle,
-  Search,
-  Plus,
-  User,
-  Heart,
-  Share2,
-  Bookmark,
-} from 'lucide-react';
+import Icon from 'react-native-vector-icons/Feather';
 import { useAuth } from '../contexts/AuthContext';
 
 export const MainTabNavigator: React.FC = () => {
   const [activeTab, setActiveTab] = useState('home');
   const { logout, user } = useAuth();
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handleLogout = useCallback(() => {
     logout();
   }, [logout]);
 
   const tabs = [
-    { id: 'home', icon: Home, label: 'ホーム' },
-    { id: 'search', icon: Search, label: '検索' },
-    { id: 'post', icon: Plus, label: '投稿' },
-    { id: 'notifications', icon: Bell, label: '通知' },
-    { id: 'profile', icon: User, label: 'プロフィール' },
+    { id: 'home', icon: 'home', label: 'ホーム' },
+    { id: 'search', icon: 'search', label: '検索' },
+    { id: 'post', icon: 'plus', label: '投稿' },
+    { id: 'notifications', icon: 'bell', label: '通知' },
+    { id: 'profile', icon: 'user', label: 'プロフィール' },
   ];
 
   return (
@@ -71,7 +62,6 @@ export const MainTabNavigator: React.FC = () => {
       <nav className="bg-white border-t border-gray-200 sticky bottom-0">
         <div className="max-w-2xl mx-auto px-4 py-2 flex justify-around">
           {tabs.map(tab => {
-            const Icon = tab.icon;
             const isActive = activeTab === tab.id;
             return (
               <button
@@ -83,7 +73,11 @@ export const MainTabNavigator: React.FC = () => {
                     : 'text-gray-600 hover:text-gray-800'
                 }`}
               >
-                <Icon size={24} />
+                <Icon
+                  name={tab.icon}
+                  size={24}
+                  color={isActive ? '#2563eb' : '#4b5563'}
+                />
                 <span className="text-xs font-medium">{tab.label}</span>
               </button>
             );
@@ -140,17 +134,17 @@ const TimelineScreen: React.FC = () => {
           <p className="text-gray-800 mb-4">{post.content}</p>
           <div className="flex items-center gap-6 text-gray-600">
             <button className="flex items-center gap-2 hover:text-red-500 transition-colors">
-              <Heart size={20} />
+              <Icon name="heart" size={20} color="#4b5563" />
               <span>{post.likes}</span>
             </button>
             <button className="flex items-center gap-2 hover:text-blue-500 transition-colors">
-              <MessageCircle size={20} />
+              <Icon name="message-circle" size={20} color="#4b5563" />
             </button>
             <button className="flex items-center gap-2 hover:text-green-500 transition-colors">
-              <Share2 size={20} />
+              <Icon name="share-2" size={20} color="#4b5563" />
             </button>
             <button className="flex items-center gap-2 hover:text-yellow-500 transition-colors ml-auto">
-              <Bookmark size={20} />
+              <Icon name="bookmark" size={20} color="#4b5563" />
             </button>
           </div>
         </div>

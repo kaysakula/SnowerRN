@@ -5,9 +5,21 @@
 //  Created by KAY.SAKULA on 2025-10-17.
 //  Updated by KAY.SAKULA on 2025-10-18.
 //
+//  Description:
+//  メール・パスワードログイン画面
+//
 
 import React, { useState, useCallback } from 'react';
-import { Mail, Lock } from 'lucide-react-native'; // ← 変更
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  ActivityIndicator,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import Icon from 'react-native-vector-icons/Feather';
 import { useAuth } from '../../contexts/AuthContext';
 
 interface LoginEmailScreenProps {
@@ -22,98 +34,178 @@ export const LoginEmailScreen: React.FC<LoginEmailScreenProps> = ({
   const { login, isLoading, errorMessage } = useAuth();
 
   const handleLogin = useCallback(async () => {
-    await login(email, password);
+    try {
+      await login(email, password);
+    } catch {
+      // エラーはuseAuthのerrorMessageで表示される
+    }
   }, [email, password, login]);
 
   const isFormValid = email && password;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-cyan-50 flex items-center justify-center p-8">
-      <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8">
-        <button
-          onClick={onBack}
-          className="mb-6 text-blue-600 hover:text-blue-700 font-medium"
-        >
-          ← 戻る
-        </button>
+    <SafeAreaView style={styles.container}>
+      <View style={styles.content}>
+        {/* 戻るボタン */}
+        <TouchableOpacity style={styles.backButton} onPress={onBack}>
+          <Icon name="arrow-left" size={24} color="#3B82F6" />
+          <Text style={styles.backText}>戻る</Text>
+        </TouchableOpacity>
 
-        <h2 className="text-3xl font-bold text-gray-800 mb-8">ログイン</h2>
+        {/* タイトル */}
+        <Text style={styles.title}>ログイン</Text>
 
-        <div className="space-y-6">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              メールアドレス / ユーザー名
-            </label>
-            <div className="relative">
-              <Mail
-                className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+        {/* フォーム */}
+        <View style={styles.form}>
+          {/* メールアドレス */}
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>メールアドレス / ユーザー名</Text>
+            <View style={styles.inputContainer}>
+              <Icon
+                name="mail"
                 size={20}
                 color="#9CA3AF"
+                style={styles.inputIcon}
               />
-              <input
-                type="text"
+              <TextInput
+                style={styles.input}
                 value={email}
-                onChange={e => setEmail(e.target.value)}
-                className="w-full pl-11 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                onChangeText={setEmail}
                 placeholder="email@example.com"
+                keyboardType="email-address"
+                autoCapitalize="none"
+                editable={!isLoading}
               />
-            </div>
-          </div>
+            </View>
+          </View>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              パスワード
-            </label>
-            <div className="relative">
-              <Lock
-                className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+          {/* パスワード */}
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>パスワード</Text>
+            <View style={styles.inputContainer}>
+              <Icon
+                name="lock"
                 size={20}
                 color="#9CA3AF"
+                style={styles.inputIcon}
               />
-              <input
-                type="password"
+              <TextInput
+                style={styles.input}
                 value={password}
-                onChange={e => setPassword(e.target.value)}
-                className="w-full pl-11 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                onChangeText={setPassword}
                 placeholder="••••••••"
+                secureTextEntry
+                editable={!isLoading}
               />
-            </div>
-          </div>
+            </View>
+          </View>
 
+          {/* エラーメッセージ */}
           {errorMessage && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
-              {errorMessage}
-            </div>
+            <View style={styles.errorContainer}>
+              <Text style={styles.errorText}>{errorMessage}</Text>
+            </View>
           )}
 
-          <button
-            onClick={handleLogin}
+          {/* ログインボタン */}
+          <TouchableOpacity
+            style={[
+              styles.loginButton,
+              (!isFormValid || isLoading) && styles.loginButtonDisabled,
+            ]}
+            onPress={handleLogin}
             disabled={!isFormValid || isLoading}
-            className={`w-full py-3 rounded-lg font-semibold transition-colors ${
-              isFormValid && !isLoading
-                ? 'bg-blue-600 hover:bg-blue-700 text-white'
-                : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-            }`}
           >
-            {isLoading ? 'ログイン中...' : 'ログイン'}
-          </button>
-
-          <div className="text-center space-y-2 text-sm">
-            <button
-              type="button"
-              className="text-blue-600 hover:underline block w-full"
-            >
-              Email または ユーザー名 を忘れた(未実装)
-            </button>
-            <button
-              type="button"
-              className="text-blue-600 hover:underline block w-full"
-            >
-              パスワードを忘れた(未実装)
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
+            {isLoading ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <Text style={styles.loginButtonText}>ログイン</Text>
+            )}
+          </TouchableOpacity>
+        </View>
+      </View>
+    </SafeAreaView>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#F0F9FF',
+  },
+  content: {
+    flex: 1,
+    padding: 24,
+  },
+  backButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 24,
+  },
+  backText: {
+    color: '#3B82F6',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  title: {
+    fontSize: 32,
+    fontWeight: 'bold',
+    color: '#1F2937',
+    marginBottom: 32,
+  },
+  form: {
+    gap: 24,
+  },
+  inputGroup: {
+    gap: 8,
+  },
+  label: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#374151',
+  },
+  inputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    borderWidth: 1,
+    borderColor: '#D1D5DB',
+    borderRadius: 12,
+    paddingHorizontal: 12,
+  },
+  inputIcon: {
+    marginRight: 8,
+  },
+  input: {
+    flex: 1,
+    paddingVertical: 12,
+    fontSize: 16,
+    color: '#1F2937',
+  },
+  errorContainer: {
+    backgroundColor: '#FEF2F2',
+    borderWidth: 1,
+    borderColor: '#FECACA',
+    borderRadius: 12,
+    padding: 12,
+  },
+  errorText: {
+    color: '#DC2626',
+    fontSize: 14,
+  },
+  loginButton: {
+    backgroundColor: '#3B82F6',
+    paddingVertical: 16,
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  loginButtonDisabled: {
+    backgroundColor: '#9CA3AF',
+  },
+  loginButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+});

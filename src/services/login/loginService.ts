@@ -3,7 +3,7 @@
 //  Project: SnowerRN
 //
 //  Created by KAY.SAKULA on 2025-10-17.
-//  Updated by KAY.SAKULA on 2025-10-17.
+//  Updated by KAY.SAKULA on 2025-10-18.
 //
 //  Description:
 //  Firebase認証サービス
@@ -14,7 +14,9 @@
 import auth, { FirebaseAuthTypes } from '@react-native-firebase/auth';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import appleAuth from '@invertase/react-native-apple-authentication';
-import { config } from '../config/firebase';
+import { config } from '../../config/firebase';
+import { ErrorCode, type ErrorCodeType } from '../../constants/errorCodes';
+import { getErrorMessage } from '../../locales';
 
 // 認証結果の型定義
 interface AuthResult {
@@ -91,7 +93,16 @@ class LoginService {
       await GoogleSignin.hasPlayServices({
         showPlayServicesUpdateDialog: true,
       });
-      const { idToken: googleIdToken } = await GoogleSignin.signIn();
+
+      // signInメソッドの戻り値から必要な情報を取得
+      const signInResult = await GoogleSignin.signIn();
+
+      // idTokenまたはserverAuthCodeを使用
+      const googleIdToken = signInResult.data?.idToken;
+
+      if (!googleIdToken) {
+        throw new Error(getErrorMessage(ErrorCode.AUTH_GOOGLE_ID_TOKEN_ERROR));
+      }
 
       // Firebaseクレデンシャル作成
       const googleCredential =
@@ -131,7 +142,7 @@ class LoginService {
 
       // 認証状態確認
       if (!appleAuthRequestResponse.identityToken) {
-        throw new Error('Apple認証に失敗しました');
+        throw new Error(getErrorMessage(ErrorCode.AUTH_APPLE_ERROR));
       }
 
       // Firebaseクレデンシャル作成
@@ -166,9 +177,11 @@ class LoginService {
   async logout(): Promise<void> {
     try {
       // Google Sign-Outも実行
-      const isGoogleSignedIn = await GoogleSignin.isSignedIn();
-      if (isGoogleSignedIn) {
+      try {
         await GoogleSignin.signOut();
+      } catch (error) {
+        // Google Sign-Inを使用していない場合はエラーを無視
+        console.log('Google Sign-Out skipped:', error);
       }
 
       await auth().signOut();
@@ -191,7 +204,7 @@ class LoginService {
   async getCurrentUserToken(forceRefresh: boolean = false): Promise<string> {
     const currentUser = auth().currentUser;
     if (!currentUser) {
-      throw new Error('ログインしていません');
+      throw new Error(getErrorMessage(ErrorCode.NOT_LOGGED_IN));
     }
 
     return await currentUser.getIdToken(forceRefresh);
@@ -215,7 +228,7 @@ class LoginService {
   async sendEmailVerification(): Promise<void> {
     const currentUser = auth().currentUser;
     if (!currentUser) {
-      throw new Error('ログインしていません');
+      throw new Error(getErrorMessage(ErrorCode.NOT_LOGGED_IN));
     }
 
     try {
@@ -241,39 +254,30 @@ class LoginService {
    * Firebase認証エラーをユーザー向けメッセージに変換
    */
   private handleAuthError(error: any): Error {
-    if (error.code === 'auth/invalid-email') {
-      return new Error('メールアドレスの形式が正しくありません');
-    }
-    if (error.code === 'auth/user-disabled') {
-      return new Error('このアカウントは無効化されています');
-    }
-    if (error.code === 'auth/user-not-found') {
-      return new Error('ユーザーが見つかりません');
-    }
-    if (error.code === 'auth/wrong-password') {
-      return new Error('パスワードが正しくありません');
-    }
-    if (error.code === 'auth/email-already-in-use') {
-      return new Error('このメールアドレスは既に使用されています');
-    }
-    if (error.code === 'auth/weak-password') {
-      return new Error('パスワードは6文字以上で設定してください');
-    }
-    if (error.code === 'auth/operation-not-allowed') {
-      return new Error('この認証方法は現在利用できません');
-    }
-    if (error.code === 'auth/too-many-requests') {
-      return new Error(
-        'リクエストが多すぎます。しばらく待ってから再試行してください',
-      );
-    }
-    if (error.code === 'auth/network-request-failed') {
-      return new Error('ネットワークエラーが発生しました');
+    // Firebase Authのエラーコードをマッピング
+    const errorCodeMap: Record<string, ErrorCodeType> = {
+      'auth/invalid-email': ErrorCode.AUTH_INVALID_EMAIL,
+      'auth/user-disabled': ErrorCode.AUTH_USER_DISABLED,
+      'auth/user-not-found': ErrorCode.AUTH_USER_NOT_FOUND,
+      'auth/wrong-password': ErrorCode.AUTH_WRONG_PASSWORD,
+      'auth/email-already-in-use': ErrorCode.AUTH_EMAIL_ALREADY_IN_USE,
+      'auth/weak-password': ErrorCode.AUTH_WEAK_PASSWORD,
+      'auth/operation-not-allowed': ErrorCode.AUTH_OPERATION_NOT_ALLOWED,
+      'auth/too-many-requests': ErrorCode.AUTH_TOO_MANY_REQUESTS,
+      'auth/network-request-failed': ErrorCode.AUTH_NETWORK_ERROR,
+    };
+
+    const errorCode = errorCodeMap[error.code];
+    if (errorCode) {
+      return new Error(getErrorMessage(errorCode));
     }
 
     // その他のエラー
-    return new Error(error.message || '認証エラーが発生しました');
+    return new Error(
+      error.message || getErrorMessage(ErrorCode.AUTH_GENERAL_ERROR),
+    );
   }
 }
 
+// デフォルトエクスポート（シングルトン）
 export default new LoginService();

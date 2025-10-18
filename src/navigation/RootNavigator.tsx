@@ -10,7 +10,7 @@
 //  認証状態に応じてSplash/Login/MainTabを表示
 //
 
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { SplashScreen } from '../screens/common/SplashScreen';
 import { LoginScreen } from '../screens/login/LoginScreen';

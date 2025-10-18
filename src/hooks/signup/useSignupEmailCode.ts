@@ -3,7 +3,7 @@
 //  Project: SnowerRN
 //
 //  Created by KAY.SAKULA on 2025-10-14.
-//  Updated by KAY.SAKULA on 2025-10-14.
+//  Updated by KAY.SAKULA on 2025-10-18.
 //
 //  Description:
 //  SignupEmailCodeScreenの状態管理フック
@@ -12,10 +12,10 @@
 //
 
 import { useState, useCallback, useEffect, useRef } from 'react';
-import { signupService } from '../services/signupService';
-import { ErrorCode, getErrorMessage } from '../utils/validationUtils';
-import { useSignupStore } from '../stores/signupStore';
-import type { ErrorCodeType } from '../constants/errorCodes';
+import { signupService } from '../../services/signup/signupService';
+import { ErrorCode, getErrorMessage } from '../../utils/validationUtils';
+import { useSignupStore } from '../../stores/signupStore';
+import type { ErrorCodeType } from '../../constants/errorCodes';
 
 const VERIFICATION_CODE_TIMEOUT = 300; // 5分（秒）
 const DEVELOPMENT_CODE = '999999'; // 開発用固定コード
@@ -27,7 +27,7 @@ export const useSignupEmailCode = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isValid, setIsValid] = useState(false);
   const [remainingTime, setRemainingTime] = useState(VERIFICATION_CODE_TIMEOUT);
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // タイマー開始
   useEffect(() => {
@@ -49,6 +49,8 @@ export const useSignupEmailCode = () => {
         clearInterval(timerRef.current);
       }
     };
+    // timerRefはuseRefで作成されているため依存配列に含める必要なし
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // コード検証
@@ -80,7 +82,7 @@ export const useSignupEmailCode = () => {
       setErrorCode(ErrorCode.VERIFICATION_CODE_INVALID);
       return false;
     } catch (error) {
-      console.error('Verify code error:', error);
+      console.error('Verification code error:', error);
       setErrorCode(ErrorCode.VERIFICATION_CODE_INVALID);
       return false;
     } finally {
@@ -88,20 +90,14 @@ export const useSignupEmailCode = () => {
     }
   }, [inputCode, remainingTime, storedCode]);
 
-  // 再送信
+  // コード再送信
   const resendCode = useCallback(async (): Promise<boolean> => {
-    if (remainingTime > 240) {
-      // 60秒以内は再送信不可
-      return false;
-    }
-
     setIsLoading(true);
     try {
-      await signupService.sendVerificationCode(email);
+      const code = await signupService.sendVerificationCode(email);
+      console.log(`開発モード: 認証コード ${code} を再送信しました`);
       setRemainingTime(VERIFICATION_CODE_TIMEOUT);
-      setInputCode('');
       setErrorCode(null);
-      console.log('開発モード: 認証コード 999999 を再送信しました');
       return true;
     } catch (error) {
       console.error('Resend code error:', error);
@@ -109,14 +105,7 @@ export const useSignupEmailCode = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [email, remainingTime]);
-
-  // フォーマット済み時間
-  const formattedTime = `${Math.floor(remainingTime / 60)}:${(
-    remainingTime % 60
-  )
-    .toString()
-    .padStart(2, '0')}`;
+  }, [email]);
 
   // エラーメッセージ取得
   const errorMessage = errorCode ? getErrorMessage(errorCode) : null;
@@ -124,11 +113,10 @@ export const useSignupEmailCode = () => {
   return {
     inputCode,
     setInputCode,
+    remainingTime,
     errorMessage,
     isLoading,
     isValid,
-    remainingTime,
-    formattedTime,
     verifyCode,
     resendCode,
   };

@@ -3,7 +3,7 @@
 //  Project: SnowerRN
 //
 //  Created by KAY.SAKULA on 2025-10-13.
-//  Updated by KAY.SAKULA on 2025-10-13.
+//  Updated by KAY.SAKULA on 2025-10-18.
 //
 //  Description:
 //  SignupEmailScreenの状態管理フック
@@ -11,15 +11,15 @@
 //  SwiftUIのSignupEmailViewModelに相当
 //
 
-import { useState, useCallback } from 'react';
-import { signupService } from '../services/signupService';
+import { useState, useCallback, useEffect } from 'react';
+import { signupService } from '../../services/signup/signupService';
 import {
   ValidationUtils,
   ErrorCode,
   getErrorMessage,
-} from '../utils/validationUtils';
-import { useSignupStore } from '../stores/signupStore';
-import type { ErrorCodeType } from '../constants/errorCodes';
+} from '../../utils/validationUtils';
+import { useSignupStore } from '../../stores/signupStore';
+import type { ErrorCodeType } from '../../constants/errorCodes';
 
 export const useSignupEmail = () => {
   const { email, setEmail, setVerificationCode } = useSignupStore();
@@ -27,12 +27,6 @@ export const useSignupEmail = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isValid, setIsValid] = useState(false);
   const [hasBlurred, setHasBlurred] = useState(false);
-
-  // バリデーション（フォーカス外し時）
-  const validateOnBlur = useCallback(async () => {
-    setHasBlurred(true);
-    await validateEmail();
-  }, [email]);
 
   // メール検証
   const validateEmail = useCallback(async () => {
@@ -77,6 +71,24 @@ export const useSignupEmail = () => {
     } finally {
       setIsLoading(false);
     }
+  }, [email, hasBlurred]);
+
+  // バリデーション（フォーカス外し時）
+  const validateOnBlur = useCallback(async () => {
+    setHasBlurred(true);
+    await validateEmail();
+    // validateEmailは依存配列に含めるとvalidateOnBlurが再生成されてしまうため、
+    // email, hasBlurredの変更時に自動的に再バリデーションされるようにuseEffectを使用
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [email]);
+
+  // emailまたはhasBlurredが変更されたら自動的に再検証
+  useEffect(() => {
+    if (hasBlurred) {
+      validateEmail();
+    }
+    // validateEmailを依存配列に含めると無限ループになるため除外
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [email, hasBlurred]);
 
   // 認証コード送信

@@ -3,7 +3,7 @@
 //  Project: SnowerRN
 //
 //  Created by KAY.SAKULA on 2025-10-13.
-//  Updated by KAY.SAKULA on 2025-10-13.
+//  Updated by KAY.SAKULA on 2025-10-18.
 //
 //  Description:
 //  認証状態管理フック
@@ -12,7 +12,7 @@
 //
 
 import { useState, useEffect, useCallback } from 'react';
-import { loginService } from '../../services/loginService';
+import loginService from '../../services/login/loginService';
 import type { FirebaseAuthTypes } from '@react-native-firebase/auth';
 
 export const useAuth = () => {
@@ -28,6 +28,8 @@ export const useAuth = () => {
     });
 
     return () => unsubscribe();
+    // loginServiceはシングルトンのため依存配列は空
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // メールログイン
@@ -35,8 +37,8 @@ export const useAuth = () => {
     setIsLoading(true);
     setError(null);
     try {
-      const user = await loginService.login(email, password);
-      setUser(user);
+      const result = await loginService.loginWithEmail(email, password);
+      setUser(result.user);
     } catch (err: any) {
       setError(err.message);
       throw err;
@@ -50,8 +52,38 @@ export const useAuth = () => {
     setIsLoading(true);
     setError(null);
     try {
-      const user = await loginService.signup(email, password);
-      setUser(user);
+      const result = await loginService.signupWithEmail(email, password);
+      setUser(result.user);
+    } catch (err: any) {
+      setError(err.message);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  // Googleログイン
+  const loginWithGoogle = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const result = await loginService.loginWithGoogle();
+      setUser(result.user);
+    } catch (err: any) {
+      setError(err.message);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  // Appleログイン
+  const loginWithApple = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const result = await loginService.loginWithApple();
+      setUser(result.user);
     } catch (err: any) {
       setError(err.message);
       throw err;
@@ -80,7 +112,7 @@ export const useAuth = () => {
     setIsLoading(true);
     setError(null);
     try {
-      await loginService.resetPassword(email);
+      await loginService.sendPasswordResetEmail(email);
     } catch (err: any) {
       setError(err.message);
       throw err;
@@ -96,6 +128,8 @@ export const useAuth = () => {
     isAuthenticated: !!user,
     login,
     signup,
+    loginWithGoogle,
+    loginWithApple,
     logout,
     resetPassword,
   };

@@ -16,11 +16,11 @@ import firestore from '@react-native-firebase/firestore';
 import type {
   SignupProfileModel,
   RecommendedUserModel,
-} from '../models/userModels';
+} from '../../models/userModels';
 import {
   userModelToFirestore,
   signupProfileToUserModel,
-} from '../models/userModels';
+} from '../../models/userModels';
 
 export class SignupService {
   private static instance: SignupService;

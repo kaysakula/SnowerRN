@@ -3,7 +3,7 @@
 //  Project: SnowerRN
 //
 //  Created by KAY.SAKULA on 2025-10-17.
-//  Updated by KAY.SAKULA on 2025-10-17.
+//  Updated by KAY.SAKULA on 2025-10-18.
 //
 //  Description:
 //  ログイン画面
@@ -11,7 +11,9 @@
 //
 
 import React, { useState, useCallback } from 'react';
-import { Chrome, User } from 'lucide-react';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import Icon from 'react-native-vector-icons/Feather';
 import { useAuth } from '../../contexts/AuthContext';
 import { LoginEmailScreen } from './LoginEmailScreen';
 
@@ -34,59 +36,140 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-cyan-50 flex items-center justify-center p-8">
-      <div className="max-w-md w-full space-y-6">
-        <div className="text-center mb-12">
-          <div className="text-6xl mb-4">⛷️</div>
-          <h1 className="text-4xl font-bold text-gray-800 mb-2">
-            Snowerへようこそ
-          </h1>
-          <p className="text-gray-600">スキー・スノボ仲間と繋がろう</p>
-        </div>
+    <SafeAreaView style={styles.container}>
+      <View style={styles.content}>
+        {/* ヘッダー */}
+        <View style={styles.header}>
+          <Text style={styles.emoji}>⛷️</Text>
+          <Text style={styles.title}>Snowerへようこそ</Text>
+          <Text style={styles.subtitle}>スキー・スノボ仲間と繋がろう</Text>
+        </View>
 
-        <div className="space-y-4">
+        {/* ボタングループ */}
+        <View style={styles.buttonGroup}>
           {/* Googleログイン */}
-          <button
-            onClick={loginWithGoogle}
-            className="w-full flex items-center justify-center gap-3 bg-red-500 hover:bg-red-600 text-white font-semibold py-4 px-6 rounded-xl transition-colors"
+          <TouchableOpacity
+            style={[styles.button, styles.googleButton]}
+            onPress={loginWithGoogle}
           >
-            <Chrome size={24} />
-            <span>Googleアカウントで続ける</span>
-          </button>
+            <Icon name="chrome" size={24} color="#fff" />
+            <Text style={styles.buttonText}>Googleアカウントで続ける</Text>
+          </TouchableOpacity>
 
           {/* Appleログイン */}
-          <button
-            onClick={loginWithApple}
-            className="w-full flex items-center justify-center gap-3 bg-black hover:bg-gray-800 text-white font-semibold py-4 px-6 rounded-xl transition-colors"
+          <TouchableOpacity
+            style={[styles.button, styles.appleButton]}
+            onPress={loginWithApple}
           >
-            <User size={24} />
-            <span>Appleアカウントで続ける</span>
-          </button>
+            <Icon name="user" size={24} color="#fff" />
+            <Text style={styles.buttonText}>Appleアカウントで続ける</Text>
+          </TouchableOpacity>
 
           {/* 区切り線 */}
-          <div className="flex items-center gap-4 py-4">
-            <div className="flex-1 h-px bg-gray-300"></div>
-            <span className="text-gray-500 text-sm">または</span>
-            <div className="flex-1 h-px bg-gray-300"></div>
-          </div>
+          <View style={styles.divider}>
+            <View style={styles.dividerLine} />
+            <Text style={styles.dividerText}>または</Text>
+            <View style={styles.dividerLine} />
+          </View>
 
           {/* 新規作成ボタン */}
-          <button
-            onClick={onNavigateToSignup}
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-4 px-6 rounded-xl transition-colors"
+          <TouchableOpacity
+            style={[styles.button, styles.signupButton]}
+            onPress={onNavigateToSignup}
           >
-            アカウント新規作成
-          </button>
+            <Text style={styles.buttonText}>アカウント新規作成</Text>
+          </TouchableOpacity>
 
           {/* 既存ログイン */}
-          <button
-            onClick={() => setShowEmailLogin(true)}
-            className="w-full bg-gray-200 hover:bg-gray-300 text-blue-600 font-semibold py-4 px-6 rounded-xl transition-colors"
+          <TouchableOpacity
+            style={[styles.button, styles.loginButton]}
+            onPress={() => setShowEmailLogin(true)}
           >
-            アカウントをお持ちの方はログイン
-          </button>
-        </div>
-      </div>
-    </div>
+            <Text style={styles.loginButtonText}>
+              アカウントをお持ちの方はログイン
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </SafeAreaView>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#F0F9FF',
+  },
+  content: {
+    flex: 1,
+    justifyContent: 'center',
+    paddingHorizontal: 24,
+  },
+  header: {
+    alignItems: 'center',
+    marginBottom: 48,
+  },
+  emoji: {
+    fontSize: 64,
+    marginBottom: 16,
+  },
+  title: {
+    fontSize: 32,
+    fontWeight: 'bold',
+    color: '#1F2937',
+    marginBottom: 8,
+  },
+  subtitle: {
+    fontSize: 16,
+    color: '#6B7280',
+  },
+  buttonGroup: {
+    gap: 16,
+  },
+  button: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 16,
+    paddingHorizontal: 24,
+    borderRadius: 12,
+    gap: 12,
+  },
+  googleButton: {
+    backgroundColor: '#EF4444',
+  },
+  appleButton: {
+    backgroundColor: '#000000',
+  },
+  signupButton: {
+    backgroundColor: '#3B82F6',
+  },
+  loginButton: {
+    backgroundColor: '#E5E7EB',
+  },
+  buttonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  loginButtonText: {
+    color: '#3B82F6',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  divider: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16,
+    paddingVertical: 16,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: '#D1D5DB',
+  },
+  dividerText: {
+    color: '#6B7280',
+    fontSize: 14,
+  },
+});
