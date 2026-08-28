@@ -1,4 +1,4 @@
-# リゾートハブ画面 仕様設計（v0.2）
+# リゾートハブ画面 仕様設計（v0.3）
 
 作成: 2026-08-28 / ステータス: **主要論点の合意済み。実装着手可**
 
@@ -36,6 +36,7 @@
 | D3 | v1 スコープの追加機能 | **コンディションタグ投票** と **写真タブ** を含める |
 | D4 | チェックイン / 新雪プッシュ通知 | **v1 対象外**（v1.5 / v2 へ） |
 | D5 | 天気・積雪データ | **外部API**から取得 |
+| D6 | ゲレンデマスタ | **登録済み（緯度経度を含む）**。新規作成はせず既存に寄せる |
 
 ### D1 に伴う必須の前提条件（これをやらないと統合は破綻する）
 統合はデータの一元化という利点がある反面、そのままやると2つ壊れる。両方を v1 で必ず入れる。
@@ -221,31 +222,53 @@ resorts/{resortId}.condition = {
 ```
 - コストはゲレンデ数 × 48回/日 で**ユーザー数に依存しない**
 - オフラインでも直前の値が出る。API 障害時は `updatedAt` が古くなるだけで画面は壊れない
-- 各ゲレンデに外部APIの識別子を持たせる: `externalIds: { weather: '...', snow: '...' }`
+- **問い合わせキーは登録済みの緯度経度**（D6）。多くの気象APIは `lat` / `lon` を直接受けるため、
+  ゲレンデごとに外部APIの独自IDをマッピングする作業は**不要**。マスタ整備の手間がまるごと消える
+  （API側が独自の観測地点IDしか受けない場合のみ `externalIds` を後付けする）
 - **出典表記**（`source` / `sourceUrl`）を②に必ず出す。多くの気象APIで規約上の義務
 
-### 7.2 ゲレンデマスタ
-外部APIは天気・積雪を返すだけで、ゲレンデの名前・位置・リフト数などは自前で持つ必要がある。
-`resorts` コレクションを運営が投入する（§8.1）。初期データの作り方（手動 / 公開データ）は別途。
+### 7.2 ゲレンデマスタ（D6: 登録済み）
+ゲレンデの名前・**緯度経度**は既に Firestore のマスタに投入済み。新規に作り直さず、
+既存のコレクション名 / ドキュメントID / フィールド名にこちらが合わせる。
 
----
+そのため §8.1 の `resorts` は**新規定義ではなく、既存マスタとの差分**として読むこと。
+実装着手前に既存スキーマの共有が必要（§12-1）。特に:
+
+- **ドキュメントIDの採番規則** — これがそのまま `posts.resortId` / `plans.resortId` の値になる。
+  自動IDなのか、`niseko-grand-hirafu` のようなスラッグなのかで、投稿データの可読性と
+  ディープリンクの作りやすさが変わる
+- **緯度経度のフィールド形式** — `GeoPoint` 型か、`lat` / `lng` の数値2つか
+- コンディション画面が今どのフィールドを読んでいるか（`condition` の追加先を合わせる）
+
+### 7.3 緯度経度があることで追加で開けるもの
+マスタに座標がある前提なら、ほぼ追加コストなしで以下が成立する。
+
+| 機能 | 内容 | 時期 |
+|---|---|---|
+| **距離表示** | 「現在地から 142km」をヘッダーに出す。端末の位置情報のみで計算でき、通信不要 | v1（安い） |
+| **マップアプリ起動** | ⋯メニューから座標で Apple/Google マップを開く（§2-①に記載済み） | v1 |
+| **近くのゲレンデ** | 情報タブに「周辺のゲレンデ」。geohash があれば範囲クエリ、無くても全件が数百件なら端末側計算で足りる | v1.5 |
+| **チェックインの真正性** | 端末位置とゲレンデ座標の距離で「実際にそこにいる」ことを検証。虚偽チェックインを防げる | v1.5 |
+| **投稿のゲレンデ自動推定** | `posts.latitude/longitude` は既に存在する。最寄りのゲレンデを推定して `resortId` を初期選択にする | v2 |
+
+`geohash` が未登録なら、v1 では**入れなくてよい**。範囲クエリが要るのは「近くのゲレンデ」
+（v1.5）からで、それまでは全件を端末側で距離計算した方が単純で速い。
 
 ## 8. データモデル（Firestore）
 
 ### 8.1 コレクション
 
 ```
-resorts/{resortId}                          … ゲレンデマスタ（運営が投入）
-  name, nameKana, prefecture, area, country
-  geo: { lat, lng, geohash }
-  heroImageUrl, officialUrl, mapUrl
-  liftCount, courseCount, elevationTop, elevationBase
-  externalIds: { weather, snow }            … 外部APIの識別子
-  condition: {                              … Functions が定期更新（§7.1）
+resorts/{resortId}                          … ★ゲレンデマスタ【登録済み】
+  name, nameKana, prefecture, area, country   … 既存（要フィールド名確認）
+  geo（緯度経度）                              … 既存。形式は要確認（GeoPoint か lat/lng か）
+  heroImageUrl, officialUrl, mapUrl, liftCount, courseCount, elevation...
+                                              … 既存にあれば流用、無ければ v1.5 で追加
+  condition: {                              … ＋Functions が定期更新（§7.1）
     snowDepth, newSnow, temp, weather,
     liftOpen, liftTotal, updatedAt, source, sourceUrl
   }
-  stats: { postsCount, upcomingPlansCount, followersCount }
+  stats: { postsCount, upcomingPlansCount, followersCount }   … ＋Functions が更新
 
 resorts/{resortId}/conditionVotes/{userId}_{YYYYMMDD}   … 雪質投票（1人1日1票）
   tag, userId, date, createdAt
@@ -347,7 +370,7 @@ src/components/resort/
 2. `posts` のスキーマ拡張（`postType` / `conditionTags` / `hasMedia` / `clientId` /
    `displayName` / `userImageUrl`）と `mountainId` → `resortId` のリネーム
 3. `timelineService` を非正規化コピー方式へ移行（N+1 の解消）＋ `postType` フィルタ追加
-4. `resorts` マスタの定義と初期データ投入
+4. 既存 `resorts` マスタのスキーマ確認と、`condition` / `stats` フィールドの追加
 5. models / services / hooks の追加
 6. `ResortHubScreen` + 実況タブ（リアルタイム + 楽観的更新）
 7. コンディションタグ投票と集計表示
@@ -369,9 +392,12 @@ src/components/resort/
 
 ## 12. 残りの未決事項
 
-1. **用語統一** — `mountainId` → `resortId` のリネームを実施してよいか（本ドラフトは実施前提）
-2. **想定書き込み量** — 1ゲレンデ1日あたり数件か数百件か。数百件ならチャット型UIを再検討
-3. **未ログインでの閲覧可否** — 閲覧のみ許可するなら Firestore ルールと導線が変わる
-4. **利用する外部APIの具体サービス** — 料金・レート制限・出典表記義務・積雪とリフト稼働の
-   カバー範囲（国内ゲレンデのリフト稼働を返すAPIは少ない。リフトはユーザー投稿で補う案もある）
-5. **`resorts` 初期データの調達方法** — 手動投入か、公開データセットか
+1. **既存マスタのスキーマ共有** — コレクション名、ドキュメントIDの採番規則、
+   緯度経度のフィールド形式、コンディション画面が読んでいるフィールド（§7.2）
+2. **用語統一** — `mountainId` → `resortId` のリネームを実施してよいか。
+   既存マスタ側の呼称に合わせるのが筋なので、1 の回答次第で決める
+3. **利用する外部APIの具体サービス** — 料金・レート制限・出典表記義務・積雪のカバー範囲。
+   国内ゲレンデの**リフト稼働**を返すAPIはほぼ無いため、リフト情報はユーザー投稿か
+   公式サイトへの導線で代替する想定（要判断）
+4. **想定書き込み量** — 1ゲレンデ1日あたり数件か数百件か。数百件ならチャット型UIを再検討
+5. **未ログインでの閲覧可否** — 閲覧のみ許すなら Firestore ルールと導線が変わる
