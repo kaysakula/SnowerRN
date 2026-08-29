@@ -12,14 +12,14 @@
 //
 
 import { useState, useCallback } from 'react';
-import { signupService } from '../../services/signup/signupService';
+import { signupService } from '../services/signupService';
 import {
   ValidationUtils,
   ErrorCode,
   getErrorMessage,
-} from '../../utils/validationUtils';
-import { useSignupStore } from '../../stores/signupStore';
-import type { ErrorCodeType } from '../../constants/errorCodes';
+} from '../utils/validationUtils';
+import { useSignupStore } from '../stores/signupStore';
+import type { ErrorCodeType } from '../constants/errorCodes';
 
 interface ValidationErrors {
   userId?: ErrorCodeType;

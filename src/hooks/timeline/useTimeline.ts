@@ -15,8 +15,8 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { FirebaseFirestoreTypes } from '@react-native-firebase/firestore';
-import { TimelinePostModel } from '../../models/postModels';
-import TimelineService from '../../services/timeline/timelineService';
+import { TimelinePostModel } from '../models/postModels';
+import TimelineService from '../services/timelineService';
 
 interface UseTimelineReturn {
   posts: TimelinePostModel[];

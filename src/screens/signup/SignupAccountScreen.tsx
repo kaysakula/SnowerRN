@@ -30,7 +30,7 @@ import { useNavigation } from '@react-navigation/native';
 import type { StackNavigationProp } from '@react-navigation/stack';
 import type { AuthStackParamList } from '../../navigation/SignupNavigator';
 import { useSignupStore } from '../../stores/signupStore';
-import { signupService } from '../../services/signup/signupService';
+import { signupService } from '../../services/signupService';
 import { ValidationUtils } from '../../utils/validationUtils';
 import { getErrorMessage } from '../../locales';
 
