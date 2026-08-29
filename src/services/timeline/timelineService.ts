@@ -22,8 +22,8 @@ import {
   TimelineResult,
   firestoreToPostModel,
   createTimelinePostModel,
-} from '../models/postModels';
-import { firestoreToUserModel } from '../models/userModels';
+} from '../../models/postModels';
+import { firestoreToUserModel } from '../../models/userModels';
 
 class TimelineService {
   private postsRef = firestore().collection('posts');

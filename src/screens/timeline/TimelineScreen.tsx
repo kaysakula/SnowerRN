@@ -28,7 +28,7 @@ import Icon from 'react-native-vector-icons/Feather';
 import { useTimeline } from '../../hooks/timeline/useTimeline';
 import TimelinePostCell from '../../components/timeline/TimelinePostCell';
 import TimelineSkeletonCell from '../../components/timeline/TimelineSkeletonCell';
-import { TimelinePostModel } from '../../models/post/postModels';
+import { TimelinePostModel } from '../../models/postModels';
 
 interface TimelineScreenProps {
   currentUserId: string;

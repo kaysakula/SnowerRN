@@ -25,9 +25,9 @@ import Icon from 'react-native-vector-icons/Feather';
 
 // オプション2: @expo/vector-icons（Expoプロジェクトの場合）
 // import { Feather as Icon } from '@expo/vector-icons';
-import { TimelinePostModel } from '../models/postModels';
-import TimelineService from '../services/TimelineService';
-import { formatTimeAgo, formatCount } from '../utils/formatters';
+import { TimelinePostModel } from '../../models/postModels';
+import TimelineService from '../../services/timeline/timelineService';
+import { formatTimeAgo, formatCount } from '../../utils/formatterUtils';
 
 interface TimelinePostCellProps {
   post: TimelinePostModel;
